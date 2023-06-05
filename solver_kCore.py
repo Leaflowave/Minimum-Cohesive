@@ -3,147 +3,117 @@ import time
 import networkx as nx
 import copy
 from k_core import Allkcore
+from Chang1 import subgraph
 
-#sys.setrecursionlimit(1000000)
-def MinimalSubgraph(G,k,red,d,X,count=None):
-    ansg=G
-    step=0
+def MinimalSubgraph(G, k, red, d, X, count=None):
+    ansg = G
+    step = 0
     anssize = len(ansg)
-    while step<5 and len(set(ansg.nodes())-set(red)-set(X))>0:
+    ansgNodes = set(ansg.nodes())
+    redSet = set(red)
+    while step < 4 and len(ansgNodes - redSet - X) > 0:
         anssize = len(ansg)
-        #print(anssize)
         g = copy.deepcopy(ansg)
-        if count is None: count=max(len(g)-2*k,1)
-        # v=random.choice(list(set(g.nodes())-red))
-        while count > len(set(g.nodes()) - set(red)-set(X)):
+        if count is None: count = max(len(g) - (k + 1), 2)
+        while count > len(ansgNodes - set(red) - set(X)):
             count = max(count // 2, 1)
-        # print("count",len(list(set(g.nodes())-set(red))))
-        # print("count value:",count)
-        S=random.sample(list(set(g.nodes())-set(red)-set(X)),count)   # random sampling
-        # print(count)
-
-        # v=list(set(g.nodes)-red)[0]
-        # red.add(v)
+        S = random.sample(list(ansgNodes - redSet - X), count)  # random sampling
+        redSet.update(S)
         red.extend(S)
-        # print("len of red",len(red))
-        # g1= copy.deepcopy(g)
-        # g.remove_node(v)
         g.remove_nodes_from(S)
 
-        # print(count)
-
-        vccs=FindkcoreSubgraph(ansg,g,k,X)
-        # print(vccs)
-        # print("len of vccs:", len(vccs))
-        if len(vccs)>=1:
-            step=0
+        vccs = FindkcoreSubgraph(g, k, X)
+        if len(vccs) >= 1:
+            step = 0
             for vcc in vccs:
-                # print("size of vcc:",len(vcc))
-                # print(v)
-                if len(set(X)-set(vcc))>0:
+                if len(X - vcc) > 0:
                     continue
-                subg=nx.Graph(nx.subgraph(ansg,vcc))
+                subg = subgraph(ansg, vcc)
                 if count > 1:
                     d += count
-                if count==1:
-                    d+=1
-                # print("next")
-                ansg=subg
-                # count=count
+                if count == 1:
+                    d += 1
+                ansg = subg
+                ansgNodes = set(ansg.nodes())
                 break
-                #return MinimalSubgraph(subg,k,red,d,X,count*2)
-                # if subanssize<anssize:
-                #     anssize=subanssize
-                #     ansg=subans
         else:
-            if count>1:
+            if count > 1:
                 for i in range(count):
-                    red.pop()
-            else:
-                step+=1
-            count=max(count//2,1)
+                    tmp = red.pop()
+                    redSet.remove(tmp)
 
-    return ansg,anssize,d
+            step += 1
+            if step == 4 and count > 1:
+                step = 0
+                count = max(count // 2, 2)
 
-def FindkcoreSubgraph(og,g,k,X):
-    #import time
-    #start=time.time()
-    components = Allkcore(g,k) #,list(nx.node_boundary(og, set(og.nodes())-set(g.nodes())))
-    #print(time.time()-start)
-    ans=[]
+    return ansg, anssize, d
+
+
+def FindkcoreSubgraph(g, k, X):
+    components = Allkcore(g, k)  # ,list(nx.node_boundary(og, set(og.nodes())-set(g.nodes())))
+    ans = []
     for c in components:
-        if len(set(X)-set(c))==0:
+        tmp = len(set(X) - c)
+        if tmp == 0:
             ans.append(c)
+            break
+        elif tmp > 0 and tmp < len(X):
+            break
     return ans
 
 
 if __name__ == '__main__':
-
-    # geng=nx.karate_club_graph()
-    # geng=ns.dolphins()
-    # geng=ns.CollegeMsgNetwork()
-    # geng=ns.election_Data()
-    # geng=ns.MySmall()
-    # geng=ns.Email_eucore()
-    # geng=ns.facebook_combined()
-    # geng=ns.USpowergrid_n4941()
-    # geng=ns.USairport500()
-    # geng=ns.USairport_2010()
-    # geng=ns.celegans_n306()
-    # geng=ns.escorts()
-    # geng=ns.primarySchool()
-    # geng=ns.highschool()
-    # geng=nx.karate_club_graph()
-    #geng=ns.advogado()
-    # geng=ns.zacharyclub()
-
-    # geng = nx.read_edgelist('dataEpoch/L1Anonymized.txt')
-    # geng.remove_edges_from(nx.selfloop_edges(geng))
-    # k=3
-    #geng.remove_edges_from(nx.selfloop_edges(geng))
-    #largest_cc = max(nx.connected_components(geng), key=len)
-    #g = nx.Graph()
-    #edges = geng.edges()
-    #g.add_edges_from([(str(e[0]), str(e[1])) for e in edges])
-
+    import gc
     starttime = time.time()
     finalsize = 0
-    density=0
-    finald=0
+    density = 0
+    finald = 0
+    for k in [4, 8, 12, 16, 20]:
+        for querysize in [2, 4, 8, 16]:
+            starttime = time.time()
+            finalsize = 0
+            density = 0
+            finald = 0
+            for _ in range(10):
+                # read graph
+                # readfile=open('dataEpoch//uk2002_' + str(k) + 'core.txt',"r+")
+                # kedges = eval(readfile.readline())
+                # subg=nx.Graph()
+                # subg.add_edges_from(kedges)
+                subg = nx.read_edgelist('dataEpoch//power_' + str(k) + 'core.txt', "r+")
 
-    import math
-    for _ in range(100):
-        k = random.choice([5,10,15,20,25])
-        querysize = random.choice([2, 4, 8, 16, 32])
-        readfile=open('dataEpoch//advogado_' + str(k) + 'core.txt',"r+")
-        kedges = eval(readfile.readline())
-        subg=nx.Graph()
-        subg.add_edges_from(kedges)
-        print(len(subg))
-        ansG=subg
-        aved=0
-        denominator=0
-        X = set(random.sample(list(subg.nodes()), querysize))
-        finalsizestep=len(subg)
-        for count in range(int(math.log(len(subg)))):
-            red =[]
-            d=0
-            ans, anssize,d = MinimalSubgraph(copy.deepcopy(subg), k, red,d,X)
-            print("d=",d)
-            denominator+=1
-            aved+=d
-            if len(ans)<len(ansG):
-                ansG=ans
-            finalsizestep=min(finalsizestep,anssize)
-            if anssize==k+1:
-                break
-        finalsize += finalsizestep
-        finald+=aved/denominator
-        density+=nx.density(ansG)
+                print(len(subg))
+                print(k)
+                ansG = subg
+                aved = 0
+                denominator = 0
+                X = set(random.sample(list(subg.nodes()), querysize))
+                finalsizestep = len(subg)
+                for count in range(7):
+                    red = []
+                    d = 0
+                    ans, anssize, d = MinimalSubgraph(copy.deepcopy(subg), k, red, d, X)
+                    print("d=", d)
+                    print(anssize)
+                    denominator += 1
+                    aved += d
+                    if len(ans) < len(ansG):
+                        del ansG
+                        ansG = ans
+                        gc.collect()
+                    finalsizestep = min(finalsizestep, anssize)
+                    if anssize == k + 1:
+                        break
+                finalsize += finalsizestep
+                finald += aved / denominator
+                density += nx.density(ansG)
 
-    endtime = time.time()
-    print("size=", finalsize/100)
-    print("d=", finald/100)
-    print("density",density/100)
-    print("ave time=",(endtime-starttime)/100)
-    print("=====================")
+            endtime = time.time()
+            print("k=", k)
+            print("querysize=", querysize)
+            print("size=", finalsize / 10)
+            print("d=", finald / 10)
+            print("density", density / 10)
+            print("ave time=", (endtime - starttime) / 10)
+            print("=====================")
