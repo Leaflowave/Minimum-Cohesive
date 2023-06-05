@@ -1,13 +1,11 @@
-import collections
 import copy
 import random
-
 from FibonacciHeap import *
 import networkx as nx
-from tools import EdgeCertificate
 from k_core import Allkcore
-import time
 
+""" This file is an implementation of the paper "Efficiently computing k-edge connected components via graph decomposition"
+"""
 
 def KECC(G, k, X):
     """
@@ -16,14 +14,11 @@ def KECC(G, k, X):
     :return: a list of k-ecc nodes
     """
     ans = []
-    # sparseg=EdgeCertificate(G,k)
     sparseg = G
-
     L = [set(sparseg.nodes())]
     while len(L) > 0:
         gset = L.pop()
         curg=subgraph(sparseg,gset)
-        # curg = nx.Graph(nx.subgraph(sparseg, gset))
         yk = Partition(curg, k, X)
         for y in yk:
             if len(X - y) > 0:
@@ -45,7 +40,6 @@ def Partition(g, k, X):
     """
     return: a set of vertices
     """
-    # g_core=nx.k_core(g,k)
     k_cores = Allkcore(g, k)  # a list of sets
     if len(k_cores) == 0: return []
     k_core = k_cores[0]
@@ -61,11 +55,7 @@ def Partition(g, k, X):
     G1 = copy.deepcopy(g_core)
     nx.set_node_attributes(G1, {v:{v} for v in G1.nodes()}, name="contain")
     while G1.number_of_edges()> 1:
-        # start = time.time()
-        # print(G1.edges())
-
         MAS_OPT(G1, k, g_core)
-        # print(time.time() - start)
     ans = []
     for cc in nx.connected_components(g_core):
         ans.append(cc)
@@ -96,38 +86,27 @@ def MAS_OPT(gprime, k, g):
     # while len(L) != len(V_gprime):
     while wprime.num_nodes>0:
         wt, u= wprime.extract_min().key
-        # print(u,len(V_gprime))
         if u not in gprime or u in L:
-            # print(u,L)
             continue
-
-        # print(u,len(L), len(V_gprime))
         L.append(u)
         # Lmapping.append(set(nodemapping[u]))
-        # print(L)
         Q = [u]
         vis=set()
 
         while len(Q) > 0:
             v = Q.pop(0)
-            # print(Lmapping)
-
             if v not in set(gprime.nodes()): continue
             for nei in list(nx.neighbors(gprime, v)):
                 if nei in L: continue
                 # target_value = w.mapping[nei].key
                 # w.decrease_key(w.mapping[nei], [target_value[0] - gprime[nei][v]['weight'], str(target_value[1])])
-
                 if wprime.mapping[nei].key[0]- gprime[nei][v]['weight'] <= -k:
                     Q.append(nei)
                     continue
                 vis.update([(nei,v),(v,nei)])
                 target_value = wprime.mapping[nei].key
                 wprime.decrease_key(wprime.mapping[nei],[target_value[0] - gprime[nei][v]['weight'], str(target_value[1])])
-                # wprime.decrease_key(wprime.mapping[nei],[target_value[0] - 1, str(target_value[1])])
-
             if u != v:
-                # print(u,v)
                 #merge u and v into u:
                 # add v's mapping to u
                 # nodemapping[u].update(nodemapping[v])
@@ -148,18 +127,15 @@ def MAS_OPT(gprime, k, g):
                 #remove v from gprime
                 gprime.remove_node(v)
 
-        V_gprime=list(gprime.nodes())
     cutEdges = []
     if len(L) > 1: cutEdges = deconstruction_cut(g, gprime.nodes[L[-1]]['contain'])
     while len(L) > 1 and len(cutEdges) < k:
         # print(cutEdges)
         v = L.pop()
         if v in gprime:
-            # print("remove v from gprime")
             gprime.remove_node(v)
         g.remove_edges_from(cutEdges)
         cutEdges = deconstruction_cut(g, gprime.nodes[L[-1]]['contain'])
-        # Lmapping.pop()
     return
 
 
@@ -175,37 +151,13 @@ def deconstruction_cut(g, a):
 
 
 if __name__ == '__main__':
-    import networks as ns
     import time
-    from tools import EdgeCertificate
-    # G=ns.B_A_2000()
     subg=nx.read_edgelist('dataEpoch//flights_3core.txt')
-    # readfile = open('dataEpoch//dblp_16core.txt', "r+")
-    # kedges = eval(readfile.readline())
-    # subg = nx.Graph()
-    # subg.add_edges_from(kedges)
-    # G.remove_edges_from(nx.selfloop_edges(G))
-    # g=nx.Graph()
-    # for edge in subg.edges():
-    #     g.add_edge(str(edge[0]),str(edge[1]))
-    # kecc=list(nx.k_edge_subgraphs(g,3))
-    #
-    # print(len(max(kecc,key=len)))
-    # print(kecc)
     start = time.time()
     print(len(subg))
-    # print(list(nx.neighbors(subg,'2504')))
-    #sparseg=EdgeCertificate(g,4)
     kecc=KECC(subg,3,set())   #[7, 4, 1, 4, 1440]
-    # Id1 = {'2581', '2640', '2636', '2638', '2928', '2639', '2637'}
-    # Id2 = {'2687', '2690', '2505', '2688'}
-    # ID3 = {'2504'}
-    # print(nx.degree_histogram(subg))
-    # kecc=list(nx.k_edge_subgraphs(subg,3))
-    # print(len(max(kecc, key=len)))
     end=time.time()
     print(end-start)
     print(list(len(kecc[i]) for i in range(len(kecc))))
     print(nx.edge_connectivity(nx.subgraph(subg,kecc[0])))
-    # print(kecc)
 
