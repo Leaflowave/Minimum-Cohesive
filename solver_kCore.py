@@ -5,9 +5,19 @@ import copy
 from k_core import Allkcore
 from Chang1 import subgraph
 
-def MinimalSubgraph(G, k, red, d, X, count=None):
+def MinimalSubgraph(G, k, d, X, count=None):
+    """
+    implementation of the Mincoh algorithm on k-core index
+    :param G: a k-core graph
+    :param k: cohesiveness level
+    :param d: record of total number of randomly removed vertices
+    :param X: query set
+    :param count: the value r, meaning the num of randomly sampled vertices each step
+    :return: a small k-core subgraph
+    """
     ansg = G
     step = 0
+    red=[]
     anssize = len(ansg)
     ansgNodes = set(ansg.nodes())
     redSet = set(red)
@@ -93,7 +103,7 @@ if __name__ == '__main__':
                 for count in range(7):
                     red = []
                     d = 0
-                    ans, anssize, d = MinimalSubgraph(copy.deepcopy(subg), k, red, d, X)
+                    ans, anssize, d = MinimalSubgraph(copy.deepcopy(subg), k, d, X)
                     print("d=", d)
                     print(anssize)
                     denominator += 1
