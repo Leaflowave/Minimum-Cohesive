@@ -1,15 +1,12 @@
 import gc
-# from Efficient and effective community search 2015 DMKD
 import networkx as nx
-import collections
-from k_core import Allkcore
-import tools
 from SteinerTree import steiner_tree
 import time
 import random
 import copy
 from FibonacciHeap import makefheap, fheappush, fheappop
-
+""" an implementation of "Efficient and effective community search"
+"""
 
 def SetMinDeg(g, S):
     G = nx.subgraph(g, S)
@@ -20,19 +17,8 @@ def SetMinDeg(g, S):
         ans = min(ans, deg_S[v])
     return ans, deg_S
 
-
 def Computeneigh(G, u, S):
     return set(nx.neighbors(G, u)).intersection(S)
-
-
-def connection_score(G, S, v):
-    return 0
-    # before=len(list(nx.connected_components(nx.subgraph(G,S-{v}))))
-    # print(before)
-    # after=len(list(nx.connected_components(nx.subgraph(G,S|{v}))))
-    # print(after)
-    # return before-after
-
 
 def p2pCompute(G, S, v, k):
     neighbors = list(nx.neighbors(G, v))
@@ -42,7 +28,6 @@ def p2pCompute(G, S, v, k):
         if x in S and len(list(nx.neighbors(subG, x))) < k:
             score += 1
     return score
-
 
 def Greedy(G, Q, ustar=None, Hstar=None):
     if Hstar is None:
@@ -55,32 +40,24 @@ def Greedy(G, Q, ustar=None, Hstar=None):
     if ustar is None: ustar = SetMinDeg(G, Hstar)
 
     curMinDeg, Degs_Hmin = SetMinDeg(G, Hmin)
-    # p1=dict()
     p2p = dict()
     p2m = dict()
     p2 = dict()
     p = dict()
-    # neigh =collections.defaultdict(set)
-    # for v in Hstar:
-    #     neigh[v]=Computeneigh(G,v,Hstar)
-
-    # Aprime=[]
     for q in Q:
-
         fheappush(Pheap, [-float('inf'), q], q)
-        # p1[q]=float('inf')
         p2[q] = float('inf')
         p2p[q] = float('inf')
         p2m[q] = 0
         p[q] = -p2[q]
-    # tmp_count=0
     while len(A) != 1 or curMinDeg < ustar:
         # print(tmp_count)
         # tmp_count+=1
         # candidates=set()
         for _ in range(len(Q) + 1):
-            # print(len(Pheap.all_items), len(Q))
+            # if len(Pheap.all_items)==0: print("empty PHeap")
             uinfo, u = fheappop(Pheap)
+
             # print(_>0,len(Hmin),u in Hmin)
             Hmin.add(u)
             Degs_Hmin[u] = len(Computeneigh(G, u, Hmin))
@@ -127,16 +104,6 @@ def Greedy(G, Q, ustar=None, Hstar=None):
         A = A - Aprime
         A.add(frozenset(astar))
 
-        # UnionNeigh=set()
-        # for a in Aprime:
-        #     UnionNeigh1=set()
-        #     for v in a:
-        #         UnionNeigh1.update(Computeneigh(G,v,Hstar))
-        #     UnionNeigh1=UnionNeigh1.intersection(Pheap.all_items) - Hmin
-        #     UnionNeigh.update(UnionNeigh1)
-
-        # neigh_u_Hstar=Computeneigh(G,u,Hstar).intersection(set([x[1] for x in Pheap]))
-        UnionNeigh = set()
 
         for w in Computeneigh(G, u, Hstar).intersection(Pheap.all_items):
             if w not in p2p:
@@ -188,68 +155,41 @@ def framework(G, Q, k):
 
 
 if __name__ == '__main__':
-    # G=nx.karate_club_graph()
-    # import networks as ns
-    # geng = ns.advogado()
-    # geng.remove_edges_from(nx.selfloop_edges(geng))
-    # largest_cc = max(nx.connected_components(geng), key=len)
-    # g = nx.Graph()
-    # edges = geng.edges()
-    #
-    # g.add_edges_from([(str(e[0]), str(e[1])) for e in edges])
-    # X = {'1485', '1174', '1089', '1052', '1579', '1397', '1177', '426', '1604', '162'}
+    for k in [4, 8, 12, 16, 20]:
+        for querysize in [2, 4, 8, 16]:
+            starttime = time.time()
+            finalsize = 0
+            density = 0
+            finald = 0
+            for _ in range(10):
+                # read a maximal k-core graph
+                # readfile = open('dataEpoch//uk2002_' + str(k) + 'core.txt', "r+")
+                # kedges = eval(readfile.readline())
+                # subg = nx.Graph()
+                # subg.add_edges_from(kedges)
+                subg = nx.read_edgelist('dataEpoch//power_' + str(k) + 'core.txt', "r+")
+                print(len(subg))
+                originalsize = len(subg)
+                
+                # sample a query set
+                X = set(random.sample(list(subg.nodes()), querysize))
 
-    # geng=nx.karate_club_graph()
-    # print(dict(nx.degree(g)))
-    # nx.draw(geng,with_labels=True)
-    # import matplotlib.pyplot as plt
-    # plt.show()
-    # X={1,11}
-    # ansG=framework(g,X)
-    # print(len(ansG))
-    # print(dict(nx.degree(nx.subgraph(g,ansG))))
-
-    # geng = nx.read_edgelist('dataEpoch/L1Anonymized.txt')
-
-    # import networks
-    # geng=networks.advogado()
-    # geng.remove_edges_from(nx.selfloop_edges(geng))
-    # largest_cc = max(nx.connected_components(geng), key=len)
-    # g = nx.Graph()
-    # edges = geng.edges()
-    # g.add_edges_from([(str(e[0]), str(e[1])) for e in edges])
-
-    starttime = time.time()
-    finalsize = 0
-    density = 0
-    for _ in range(100):
-        k = random.choice([5,10])
-        querysize = random.choice([2, 4, 8, 16, 32])
-        readfile = open('dataEpoch//advogado_' + str(k) + 'core.txt', "r+")
-        kedges = eval(readfile.readline())
-        subg = nx.Graph()
-        subg.add_edges_from(kedges)
-        # subg=nx.read_edgelist('dataEpoch//lastfm_asia_edgesTrans.txt',nodetype=str)
-        # subg=nx.k_core(subg,k)
-        originalsize = len(subg)
-        X = set(random.sample(list(subg.nodes()), querysize))
-        finalsizestep = len(subg)
-        ansG = framework(copy.deepcopy(subg), X, k)
-        anssize = len(ansG)
-        finalsizestep = min(finalsizestep, anssize)
-        finalsize += finalsizestep
-        density += nx.density(nx.subgraph(subg, ansG))
-        print(finalsizestep)
-        # del subg, kedges, ansG
-        gc.collect()
-    endtime = time.time()
-    # print("k=", k)
-    print("size=", finalsize / 100.0)
-    # print("d=", aved/denominator)
-    # print("original=", originalsize)
-    print("density=", density / 100.0)
-    print("ave time=", (endtime - starttime) / 100.0)
-    print("=====================")
+                finalsizestep = len(subg)
+                ansG = framework(copy.deepcopy(subg), X, k)
+                anssize = len(ansG)
+                finalsizestep = min(finalsizestep, anssize)
+                finalsize += finalsizestep
+                density += nx.density(nx.subgraph(subg, ansG))
+                print(finalsizestep)
+                del subg, ansG
+                gc.collect()
+            endtime = time.time()
+            print("k=", k)
+            print("querysize", querysize)
+            print("size=", finalsize / 10)
+            print("density", density / 10)
+            print("ave time=", (endtime - starttime) / 10)
+            print("=====================")
 
 
 
