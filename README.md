@@ -1,5 +1,6 @@
 # Minimum-Cohesive
 
-This is an implementation of the paper "A Randomized Algorithm for Extracting  Minimum Cohesive Subgraphs from Large Graphs"
+This repository contains an implementation of the paper titled 'A Randomized Algorithm for Extracting Minimum Cohesive Subgraphs from Large Graphs.' 
 
-We provide the implementaion of MinCoh with k-core, k-ec and k-truss on the Power dataset.
+The implementation includes the MinCoh algorithm with support for the k-core, k-ec, and k-truss cohesive indices. 
+The implementation has been applied to the Power dataset for a running example.
