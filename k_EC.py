@@ -31,8 +31,7 @@ if __name__ == '__main__':
             if ecc is None or len(ecc) == 0:
                 f.flush()
                 break
-                
-            # pick the largest ecc
+            
             maxecc = max(eccs, key=len)
             maxG = subg.subgraph(maxecc)
             maxEdges = maxG.edges()
