@@ -1,4 +1,6 @@
-
+"""
+An implementation of fibonacciheap
+"""
 
 def makefheap():
     """make-heap in Cormen et al."""
