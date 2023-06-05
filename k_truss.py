@@ -3,31 +3,33 @@ import gc
 
 if __name__ == '__main__':
 
-    namestr = "dataEpoch//Truss_Wiki_"
-    for k in [10, 20, 30, 40, 50]:
-        # for k in range(2,8,2):
-        # readfile = open('dataEpoch//Wiki_' + str(k) + 'core.txt', "r+")
-        # kedges = eval(readfile.readline())
-        # subg = nx.Graph()
-        # subg.add_edges_from(kedges)
-        subg=nx.read_edgelist('dataEpoch//Wiki_' + str(k) + 'core.txt',)
+    namestr = "dataEpoch//Truss_power_"
+    for k in [4,8,12,16,20]:
+
+        # read a list of edges ([edge1,edge2,...]) as input graph
+        #readfile = open('dataEpoch//power_' + str(k) + 'core.txt', "r+")
+        #kedges = eval(readfile.readline())
+        #subg = nx.Graph()
+        #subg.add_edges_from(kedges)
+
+        # read an edgelist (each line represent an edge)
+        subg=nx.read_edgelist('dataEpoch//power_' + str(k) + 'core.txt')
         subg.remove_edges_from(nx.selfloop_edges(subg))
         print(len(subg),nx.number_of_edges(subg))
 
-        with open(namestr + str(k) + ".txt", 'a+') as f:
-            vcc=nx.k_truss(subg,k)
-            print(len(vcc))
-            if vcc is None or len(vcc) == 0:
+        with open(namestr + str(k) + ".txt", 'w') as f:
+            g_truss=nx.k_truss(subg,k)
+            trusses = list(nx.connected_components(g_truss))
+            if trusses is None or len(trusses) == 0:
                 f.flush()
-            # flag=False
             print(k)
-            # print(len(vcc))
-
-            maxG = vcc
+            maxtruss=max(trusses,key=len)
+            maxG = nx.subgraph(g_truss,maxtruss)
             maxEdges = maxG.edges()
-            # print(len(vcc))
-            del vcc, subg
+            del trusses, subg
             gc.collect()
+
+            # save the edgelist of the k-ec
             f.write(str(maxEdges))
             f.write("\n")
             f.flush()
